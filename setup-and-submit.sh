@@ -1,6 +1,10 @@
 set -e
 set -x
 
+export PYTHONIOENCODING=utf8
+
+PYTHON=/usr/bin/python
+SPARK_HOME=/data/cloudera/parcels/CDH/lib/spark
 # Set $PYTHON to the Python executable you want to create
 # your virtual environment with. It could just be something
 # like `python3`, if that's already on your $PATH, or it could
@@ -11,10 +15,10 @@ test -n "$PYTHON"
 # runs from the correct location.
 test -n "$SPARK_HOME"
 
-"$PYTHON" -m venv venv
+"$PYTHON" -m virtualenv venv
 source venv/bin/activate
-pip install -U pip
-pip install -r requirements.pip
+pip install -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com -U pip
+pip install -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com -r requirements.pip
 deactivate
 
 # Here we package up an isolated environment that we'll ship to YARN.
@@ -39,7 +43,7 @@ export PYSPARK_PYTHON="venv/bin/python"
 # is `local-file-name#aliased-file-name`. So when we set
 # PYSPARK_PYTHON to `venv/bin/python`, `venv/` here references the
 # aliased zip file we're sending to YARN.
-spark-submit \
+$SPARK_HOME/bin/spark-submit \
     --name "Sample Spark Application" \
     --master yarn \
     --deploy-mode client \
@@ -47,7 +51,7 @@ spark-submit \
     --conf "spark.yarn.appMasterEnv.PYSPARK_PYTHON=$PYSPARK_PYTHON" \
     --archives "venv.zip#venv" \
     --py-files "application.zip" \
-    hello.py
+    test.py
 
 # YARN Cluster Mode Example
 # -------------------------
@@ -59,7 +63,7 @@ spark-submit \
 #     replicate any environment variables you need using
 #     `--conf "spark.yarn.appMasterEnv..."` and any local files you
 #     depend on using `--files`.
-spark-submit \
+echo $SPARK_HOME/bin/spark-submit \
     --name "Sample Spark Application" \
     --master yarn \
     --deploy-mode cluster \
